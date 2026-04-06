@@ -1,0 +1,30 @@
+# Environment configuration (contains user-specific settings)
+.env
+
+# TLS certificates and private keys (sensitive!)
+ssl/*.pem
+ssl/*.key
+ssl/*.crt
+ssl/*.csr
+
+# Docker compose override files
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+dist/
+build/
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,36 @@
+# Environment files (may contain secrets)
+.env
+.env.default
+
+# Git files
+.git
+.gitignore
+
+# Documentation
+*.md
+PLAN.md
+BLUEPRINT.md
+
+# Ignore files
+.dockerignore
+.gitignore
+
+# SSL certificates (mounted at runtime, not baked into image)
+ssl/
+
+# Docker compose files
+docker-compose*.yml
+
+# Scripts (run on host, not in container)
+*.sh
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
