@@ -1,0 +1,97 @@
+# HTTPS Server
+# TLS/SSL configuration for secure connections
+# =============================================================================
+
+server {
+    listen 443 ssl http2;
+    server_name _;
+    root /dist/container;
+    index index.html;
+
+    # SSL Configuration
+    ssl_certificate /etc/nginx/ssl/cert.pem;
+    ssl_certificate_key /etc/nginx/ssl/key.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384';
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    # HSTS (HTTP Strict Transport Security)
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # Include security headers (shared with HTTP server)
+    include /etc/nginx/security-headers.conf;
+
+    # Static locations (same as HTTP server)
+    location /images/ {
+        alias /usr/share/nginx/content/images/;
+        expires ${CACHE_STATIC_EXPIRES};
+        add_header Cache-Control "public";
+        include /etc/nginx/security-headers.conf;
+    }
+
+    location /audio/ {
+        alias /usr/share/nginx/content/audio/;
+        expires ${CACHE_STATIC_EXPIRES};
+        add_header Cache-Control "public";
+        include /etc/nginx/security-headers.conf;
+    }
+
+    location /videos/ {
+        alias /usr/share/nginx/content/videos/;
+        add_header Accept-Ranges bytes;
+        expires ${CACHE_STATIC_EXPIRES};
+        add_header Cache-Control "public";
+        include /etc/nginx/security-headers.conf;
+
+        types {
+            video/mp4       mp4 m4v;
+            video/webm      webm;
+            video/quicktime mov;
+            video/x-matroska mkv;
+            video/x-msvideo  avi;
+        }
+    }
+
+    location /_astro/ {
+        root /dist/container;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        include /etc/nginx/security-headers.conf;
+    }
+
+    location = /favicon.ico {
+        access_log off;
+        log_not_found off;
+    }
+
+    location = /favicon.svg {
+        access_log off;
+        log_not_found off;
+    }
+
+    location /health {
+        access_log off;
+        return 200 '{"status":"healthy","timestamp":"$time_iso8601"}';
+        add_header Content-Type application/json;
+        include /etc/nginx/security-headers.conf;
+    }
+
+${ENABLE_API_PROXY_BLOCK}
+
+    location / {
+        try_files $uri $uri.html $uri/index.html =404;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        expires ${CACHE_HTML_EXPIRES};
+        default_type text/html;
+        include /etc/nginx/security-headers.conf;
+    }
+}
+
+# HTTP to HTTPS redirect
+server {
+    listen ${NGINX_PORT};
+    server_name _;
+    return 301 https://$host$request_uri;
+}

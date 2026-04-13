@@ -1,0 +1,124 @@
+# Chasqui NGINX Server Block
+# Auto-generated from template by docker-entrypoint.sh
+# =============================================================================
+
+server {
+    listen ${NGINX_PORT};
+    server_name _;
+    root /dist/container;
+    index index.html;
+
+    # Security: Hide nginx version
+    server_tokens off;
+
+    # -----------------------------------------------------------------------------
+    # Static Asset Routes (Hardcoded Paths)
+    # Using 'alias' directive to serve content from separate mount point.
+    # Paths are hardcoded and validated by entrypoint - no user input reaches here.
+    # -----------------------------------------------------------------------------
+
+    # Images - served from content mount via alias
+    location /images/ {
+        alias /usr/share/nginx/content/images/;
+        expires ${CACHE_STATIC_EXPIRES};
+        add_header Cache-Control "public";
+        include /etc/nginx/security-headers.conf;
+    }
+
+    # Audio - served from content mount via alias
+    location /audio/ {
+        alias /usr/share/nginx/content/audio/;
+        expires ${CACHE_STATIC_EXPIRES};
+        add_header Cache-Control "public";
+        include /etc/nginx/security-headers.conf;
+    }
+
+    # Videos with streaming support - served from content mount via alias
+    # Using explicit MIME types to ensure correct Content-Type headers
+    location /videos/ {
+        alias /usr/share/nginx/content/videos/;
+        add_header Accept-Ranges bytes;
+        expires ${CACHE_STATIC_EXPIRES};
+        add_header Cache-Control "public";
+        include /etc/nginx/security-headers.conf;
+
+        # Define video MIME types explicitly for this location
+        types {
+            video/mp4       mp4 m4v;
+            video/webm      webm;
+            video/quicktime mov;
+            video/x-matroska mkv;
+            video/x-msvideo  avi;
+        }
+    }
+
+    # -----------------------------------------------------------------------------
+    # Hashed Assets (Astro build output)
+    # Immutable cache - filenames contain content hashes
+    # -----------------------------------------------------------------------------
+    location /_astro/ {
+        root /dist/container;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        include /etc/nginx/security-headers.conf;
+    }
+
+    # -----------------------------------------------------------------------------
+    # Favicons (reduce log noise)
+    # -----------------------------------------------------------------------------
+    location = /favicon.ico {
+        access_log off;
+        log_not_found off;
+    }
+
+    location = /favicon.svg {
+        access_log off;
+        log_not_found off;
+    }
+
+    # -----------------------------------------------------------------------------
+    # Health Check Endpoint
+    # -----------------------------------------------------------------------------
+    location /health {
+        access_log off;
+        return 200 '{"status":"healthy","timestamp":"$time_iso8601"}';
+        add_header Content-Type application/json;
+        include /etc/nginx/security-headers.conf;
+    }
+
+    # -----------------------------------------------------------------------------
+    # API Proxy (Conditionally Enabled via ENABLE_API_PROXY_COMMENT)
+    # Only active when ENABLE_API_PROXY=true
+    # -----------------------------------------------------------------------------
+${ENABLE_API_PROXY_BLOCK}
+
+    # -----------------------------------------------------------------------------
+    # HTML Catch-All (Dynamic Content)
+    # Clean URLs: /my-page -> my-page -> my-page.html -> my-page/index.html
+    # -----------------------------------------------------------------------------
+    location / {
+        # Try exact match, then .html, then /index.html, then 404
+        try_files $uri $uri.html $uri/index.html =404;
+
+        # Cache-busting for HTML (always fresh)
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        expires ${CACHE_HTML_EXPIRES};
+
+        # Ensure proper content type for HTML
+        default_type text/html;
+
+        include /etc/nginx/security-headers.conf;
+    }
+
+    # -----------------------------------------------------------------------------
+    # Error Pages
+    # -----------------------------------------------------------------------------
+    error_page 404 /404.html;
+    error_page 500 502 503 504 /50x.html;
+}
+
+# -----------------------------------------------------------------------------
+# TLS/HTTPS Configuration (Conditionally Enabled via TLS_BLOCK)
+# Only included when TLS certificates are present
+# -----------------------------------------------------------------------------
+${TLS_BLOCK}

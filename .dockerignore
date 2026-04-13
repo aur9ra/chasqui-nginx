@@ -21,8 +21,8 @@ ssl/
 # Docker compose files
 docker-compose*.yml
 
-# Scripts (run on host, not in container)
-*.sh
+# Runtime script (not needed in container)
+run-nginx.sh
 
 # Editor files
 *.swp
