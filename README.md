@@ -30,12 +30,12 @@ The deployment environment is designed to be "ready-to-run" and performs no buil
 
 ### Common Docker Commands
 
+- run: ./run-nginx.sh (Pulls/builds and restarts)
 - **view logs**: `docker compose -f docker-compose.deploy.yml logs -f`
 - **check status**: `docker ps`
 - **stop containers**: `docker compose -f docker-compose.deploy.yml stop`
 - **shutdown & remove containers**: `docker compose -f docker-compose.deploy.yml down`
 - **restart containers**: `docker compose -f docker-compose.deploy.yml restart`
-- **update image**: `./run-nginx.sh` (Pulls/builds and restarts)
 
 ---
 
